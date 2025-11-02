@@ -1,84 +1,73 @@
-// script.js - unterstützt Bild und Video; verwendet lokale Datei images/photo.jpg als Fallback
-function getQueryParam(name){
-  try {
-    const url = new URL(window.location.href);
-    return url.searchParams.get(name);
-  } catch (e) {
-    return null;
+// script.js - Popup fragt "liebst du mich so sehr wie ich dich" und zeigt nach Bestätigung das Bild.
+// Erwartet, dass das Bild unter images/photo.jpg liegt (relativer Pfad).
+// Optional: ?img=URL kann eine Bild-URL übergeben (URL-encoded), diese hat Vorrang.
+
+(function(){
+  const overlay = document.getElementById('overlay');
+  const yesBtn = document.getElementById('yesBtn');
+  const mediaContainer = document.getElementById('mediaContainer');
+  const mainPhoto = document.getElementById('mainPhoto');
+
+  // Standard-Fallback: lokales Bild im repo
+  const localFallback = 'images/photo.jpg';
+
+  // Hilfsfunktion: lese query param
+  function getQueryParam(name){
+    try {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    } catch (e){
+      return null;
+    }
   }
-}
 
-const acceptBtn = document.getElementById('accept');
-const messageCard = document.getElementById('message-card');
-const mediaCard = document.getElementById('media-card');
-const photoImg = document.getElementById('photo');
-const videoEl = document.getElementById('video');
-const backBtn = document.getElementById('back');
+  // Bildquelle: ?img=... hat Vorrang; ansonsten lokales Bild
+  let imgUrl = getQueryParam('img') || localFallback;
+  try { imgUrl = decodeURIComponent(imgUrl); } catch (e){ /* ignore */ }
 
-// Standard-Fallback: lokal gespeichertes Bild im Repo
-const localFallback = '/Sel.Ken/images/photo.jpg'; // passe an, falls du die Seite an root hostest
-
-let imgUrl = getQueryParam('img') || '';
-let videoUrl = getQueryParam('video') || '';
-
-try { if (imgUrl) imgUrl = decodeURIComponent(imgUrl); } catch(e){}
-try { if (videoUrl) videoUrl = decodeURIComponent(videoUrl); } catch(e){}
-
-// Wenn nichts übergeben wurde, nutze das lokale Bild als Fallback
-if (!imgUrl && !videoUrl) {
-  imgUrl = localFallback;
-}
-
-// Fehlerbehandlung
-function showErrorAndReturn(msg){
-  alert(msg || 'Medya yüklenemedi. Lütfen bağlantıyı kontrol edin.');
-  mediaCard.classList.add('hidden');
-  messageCard.classList.remove('hidden');
-  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
-  photoImg.src = '';
-}
-
-acceptBtn.addEventListener('click', async () => {
-  messageCard.classList.add('hidden');
-  mediaCard.classList.remove('hidden');
-
-  // Reset
-  photoImg.classList.add('hidden');
-  videoEl.classList.add('hidden');
-  photoImg.src = '';
-  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
-
-  if (videoUrl) {
-    // Video hat Priorität
-    videoEl.classList.remove('hidden');
-    videoEl.src = videoUrl;
-    videoEl.muted = true;
-    videoEl.autoplay = true;
-    videoEl.playsInline = true;
-    videoEl.onloadedmetadata = () => {
-      const playPromise = videoEl.play();
-      if (playPromise && playPromise.catch) playPromise.catch(() => { videoEl.muted = true; });
+  // Wenn das Bild nicht existiert oder nicht geladen werden kann, zeigen wir eine Nachricht und bleiben im Overlay.
+  function showImage(){
+    // Setze src zuletzt, um onerror/onload zu fangen
+    mainPhoto.onload = () => {
+      // Bild geladen, blend overlay aus (falls noch sichtbar)
+      overlay.classList.add('hidden');
+      mediaContainer.classList.remove('hidden');
     };
-    videoEl.onerror = () => { showErrorAndReturn('Video yüklenirken hata oluştu.'); };
-  } else {
-    // Bild anzeigen
-    photoImg.classList.remove('hidden');
-    photoImg.onload = () => {};
-    photoImg.onerror = () => { showErrorAndReturn('Resim yüklenirken hata oluştu.'); };
-    photoImg.src = imgUrl;
-  }
-});
+    mainPhoto.onerror = () => {
+      // Fehlerbehandlung: falls imgUrl ein externes URL war, zeige eine Fehlermeldung
+      alert('Das Bild konnte nicht geladen werden. Bitte überprüfe den Pfad oder lade das Bild unter images/photo.jpg hoch.');
+      overlay.classList.remove('hidden');
+      mediaContainer.classList.add('hidden');
+    };
 
-backBtn.addEventListener('click', () => {
-  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
-  photoImg.src = '';
-  mediaCard.classList.add('hidden');
-  messageCard.classList.remove('hidden');
-});
-
-// Enter-Taste akzeptiert
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !messageCard.classList.contains('hidden')) {
-    acceptBtn.click();
+    // Starten
+    mainPhoto.src = imgUrl;
   }
-});
+
+  // Klick-Handler für JA
+  yesBtn.addEventListener('click', () => {
+    // Kleines visuelles Feedback: disable Button kurz
+    yesBtn.disabled = true;
+    yesBtn.style.opacity = '0.6';
+    // Zeige das Bild
+    showImage();
+    // Re-enable nach kurzer Zeit (nur für UX)
+    setTimeout(() => {
+      yesBtn.disabled = false;
+      yesBtn.style.opacity = '';
+    }, 800);
+  });
+
+  // Enter-/Space-Taste löst JA aus, falls Overlay sichtbar
+  document.addEventListener('keydown', (e) => {
+    if (!overlay.classList.contains('hidden') && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      yesBtn.click();
+    }
+  });
+
+  // Accessibility: fokus auf Button beim Laden
+  window.addEventListener('load', () => {
+    yesBtn.focus();
+  });
+})();
