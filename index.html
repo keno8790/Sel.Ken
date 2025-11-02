@@ -3,24 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Seni Seviyorum</title>
+  <title>Liebst du mich?</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="wrapper" class="centered">
-    <div id="message-card" class="card" role="dialog" aria-labelledby="msg" aria-modal="true">
-      <h1 id="msg">seni seviyorum</h1>
-      <p class="sub">Açmak için kabul et</p>
-      <div class="controls">
-        <button id="accept" class="btn btn-accept">Kabul Et</button>
+  <div id="app">
+    <div id="overlay" class="overlay">
+      <div class="cookie-card" role="dialog" aria-labelledby="prompt" aria-modal="true">
+        <h1 id="prompt">liebst du mich so sehr wie ich dich</h1>
+        <p class="hint">Wenn ja, drücke einfach auf "JA".</p>
+        <div class="actions">
+          <button id="yesBtn" class="btn btn-yes" aria-label="Ja">JA</button>
+        </div>
       </div>
     </div>
 
-    <div id="media-card" class="hidden">
-      <img id="photo" alt="Revealed photo" />
-      <video id="video" controls playsinline webkit-playsinline class="hidden"></video>
-      <button id="back" class="btn btn-back">Geri</button>
-    </div>
+    <main id="mediaContainer" class="media-container hidden" aria-live="polite">
+      <img id="mainPhoto" alt="Bild" src="" />
+    </main>
   </div>
 
   <script src="script.js"></script>
