@@ -1,0 +1,84 @@
+// script.js - unterstützt Bild und Video; verwendet lokale Datei images/photo.jpg als Fallback
+function getQueryParam(name){
+  try {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(name);
+  } catch (e) {
+    return null;
+  }
+}
+
+const acceptBtn = document.getElementById('accept');
+const messageCard = document.getElementById('message-card');
+const mediaCard = document.getElementById('media-card');
+const photoImg = document.getElementById('photo');
+const videoEl = document.getElementById('video');
+const backBtn = document.getElementById('back');
+
+// Standard-Fallback: lokal gespeichertes Bild im Repo
+const localFallback = '/Sel.Ken/images/photo.jpg'; // passe an, falls du die Seite an root hostest
+
+let imgUrl = getQueryParam('img') || '';
+let videoUrl = getQueryParam('video') || '';
+
+try { if (imgUrl) imgUrl = decodeURIComponent(imgUrl); } catch(e){}
+try { if (videoUrl) videoUrl = decodeURIComponent(videoUrl); } catch(e){}
+
+// Wenn nichts übergeben wurde, nutze das lokale Bild als Fallback
+if (!imgUrl && !videoUrl) {
+  imgUrl = localFallback;
+}
+
+// Fehlerbehandlung
+function showErrorAndReturn(msg){
+  alert(msg || 'Medya yüklenemedi. Lütfen bağlantıyı kontrol edin.');
+  mediaCard.classList.add('hidden');
+  messageCard.classList.remove('hidden');
+  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
+  photoImg.src = '';
+}
+
+acceptBtn.addEventListener('click', async () => {
+  messageCard.classList.add('hidden');
+  mediaCard.classList.remove('hidden');
+
+  // Reset
+  photoImg.classList.add('hidden');
+  videoEl.classList.add('hidden');
+  photoImg.src = '';
+  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
+
+  if (videoUrl) {
+    // Video hat Priorität
+    videoEl.classList.remove('hidden');
+    videoEl.src = videoUrl;
+    videoEl.muted = true;
+    videoEl.autoplay = true;
+    videoEl.playsInline = true;
+    videoEl.onloadedmetadata = () => {
+      const playPromise = videoEl.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => { videoEl.muted = true; });
+    };
+    videoEl.onerror = () => { showErrorAndReturn('Video yüklenirken hata oluştu.'); };
+  } else {
+    // Bild anzeigen
+    photoImg.classList.remove('hidden');
+    photoImg.onload = () => {};
+    photoImg.onerror = () => { showErrorAndReturn('Resim yüklenirken hata oluştu.'); };
+    photoImg.src = imgUrl;
+  }
+});
+
+backBtn.addEventListener('click', () => {
+  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
+  photoImg.src = '';
+  mediaCard.classList.add('hidden');
+  messageCard.classList.remove('hidden');
+});
+
+// Enter-Taste akzeptiert
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !messageCard.classList.contains('hidden')) {
+    acceptBtn.click();
+  }
+});
