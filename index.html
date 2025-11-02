@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seni Seviyorum</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="wrapper" class="centered">
+    <div id="message-card" class="card" role="dialog" aria-labelledby="msg" aria-modal="true">
+      <h1 id="msg">seni seviyorum</h1>
+      <p class="sub">Açmak için kabul et</p>
+      <div class="controls">
+        <button id="accept" class="btn btn-accept">Kabul Et</button>
+      </div>
+    </div>
+
+    <div id="media-card" class="hidden">
+      <img id="photo" alt="Revealed photo" />
+      <video id="video" controls playsinline webkit-playsinline class="hidden"></video>
+      <button id="back" class="btn btn-back">Geri</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
