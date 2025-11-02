@@ -1,0 +1,219 @@
+*** Begin Patch
+*** Add File: index.html
++<!doctype html>
++<html lang="de">
++<head>
++  <meta charset="utf-8" />
++  <meta name="viewport" content="width=device-width,initial-scale=1" />
++  <title>Seni Seviyorum</title>
++  <link rel="stylesheet" href="styles.css" />
++</head>
++<body>
++  <div id="wrapper" class="centered">
++    <div id="message-card" class="card" role="dialog" aria-labelledby="msg" aria-modal="true">
++      <h1 id="msg">seni seviyorum</h1>
++      <p class="sub">Açmak için kabul et</p>
++      <div class="controls">
++        <button id="accept" class="btn btn-accept">Kabul Et</button>
++      </div>
++    </div>
++
++    <div id="media-card" class="hidden">
++      <img id="photo" alt="Revealed photo" />
++      <video id="video" controls playsinline webkit-playsinline class="hidden"></video>
++      <button id="back" class="btn btn-back">Geri</button>
++    </div>
++  </div>
++
++  <script src="script.js"></script>
++</body>
++</html>
++
+*** End Patch
+*** Begin Patch
+*** Add File: styles.css
++:root{
++  --bg: #0f1722;
++  --card: rgba(255,255,255,0.04);
++  --accent: #ef476f;
++  --text: #e6eef6;
++  --muted: #9fb2c8;
++}
++
++*{box-sizing:border-box}
++html,body,#wrapper{height:100%}
++body{
++  margin:0;
++  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
++  background: linear-gradient(180deg,#061018 0%, #072030 100%);
++  color:var(--text);
++  -webkit-font-smoothing:antialiased;
++  -moz-osx-font-smoothing:grayscale;
++  display:flex;
++  align-items:center;
++  justify-content:center;
++  min-height:100vh;
++}
++
++.centered{display:flex;align-items:center;justify-content:center;width:100%;padding:24px}
++
++.card{
++  background:var(--card);
++  border-radius:14px;
++  padding:28px;
++  text-align:center;
++  max-width:420px;
++  width:100%;
++  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
++  backdrop-filter: blur(6px);
++}
++
++#message-card h1{
++  margin:0 0 8px 0;
++  font-size:34px;
++  letter-spacing:0.4px;
++}
++
++.sub{margin:0 0 18px 0;color:var(--muted)}
++
++.controls{display:flex;gap:12px;justify-content:center}
++
++.btn{
++  cursor:pointer;
++  border:0;
++  padding:10px 16px;
++  border-radius:10px;
++  font-weight:600;
++  color:white;
++  background:rgba(255,255,255,0.06);
++}
++
++.btn-accept{
++  background: linear-gradient(90deg,var(--accent),#ff8fab);
++  box-shadow: 0 6px 18px rgba(239,71,111,0.25);
++}
++
++.hidden{display:none}
++
++#media-card{
++  position:relative;
++  max-width:100vw;
++  max-height:100vh;
++  display:flex;
++  align-items:center;
++  justify-content:center;
++}
++
++#photo, #video{
++  max-width:100%;
++  max-height:100vh;
++  border-radius:10px;
++  display:block;
++  box-shadow: 0 10px 40px rgba(2,6,23,0.6);
++}
++
++#video{
++  background: black;
++}
++
++.btn-back{
++  position:fixed;
++  left:16px;
++  top:16px;
++  background: rgba(0,0,0,0.45);
++  color: #fff;
++  padding:8px 12px;
++  border-radius:8px;
++  z-index:20;
++  backdrop-filter: blur(4px);
++}
++
+*** End Patch
+*** Begin Patch
+*** Add File: script.js
++// script.js - unterstützt Bild und Video; verwendet lokale Datei images/photo.jpg als Fallback
++function getQueryParam(name){
++  try {
++    const url = new URL(window.location.href);
++    return url.searchParams.get(name);
++  } catch (e) {
++    return null;
++  }
++}
++
++const acceptBtn = document.getElementById('accept');
++const messageCard = document.getElementById('message-card');
++const mediaCard = document.getElementById('media-card');
++const photoImg = document.getElementById('photo');
++const videoEl = document.getElementById('video');
++const backBtn = document.getElementById('back');
++
++// Standard-Fallback: lokal gespeichertes Bild im Repo
++const localFallback = '/Sel.Ken/images/photo.jpg'; // passe an, falls du die Seite an root hostest
++
++let imgUrl = getQueryParam('img') || '';
++let videoUrl = getQueryParam('video') || '';
++
++try { if (imgUrl) imgUrl = decodeURIComponent(imgUrl); } catch(e){}
++try { if (videoUrl) videoUrl = decodeURIComponent(videoUrl); } catch(e){}
++
++// Wenn nichts übergeben wurde, nutze das lokale Bild als Fallback
++if (!imgUrl && !videoUrl) {
++  imgUrl = localFallback;
++}
++
++// Fehlerbehandlung
++function showErrorAndReturn(msg){
++  alert(msg || 'Medya yüklenemedi. Lütfen bağlantıyı kontrol edin.');
++  mediaCard.classList.add('hidden');
++  messageCard.classList.remove('hidden');
++  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
++  photoImg.src = '';
++}
++
++acceptBtn.addEventListener('click', async () => {
++  messageCard.classList.add('hidden');
++  mediaCard.classList.remove('hidden');
++
++  // Reset
++  photoImg.classList.add('hidden');
++  videoEl.classList.add('hidden');
++  photoImg.src = '';
++  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
++
++  if (videoUrl) {
++    // Video hat Priorität
++    videoEl.classList.remove('hidden');
++    videoEl.src = videoUrl;
++    videoEl.muted = true;
++    videoEl.autoplay = true;
++    videoEl.playsInline = true;
++    videoEl.onloadedmetadata = () => {
++      const playPromise = videoEl.play();
++      if (playPromise && playPromise.catch) playPromise.catch(() => { videoEl.muted = true; });
++    };
++    videoEl.onerror = () => { showErrorAndReturn('Video yüklenirken hata oluştu.'); };
++  } else {
++    // Bild anzeigen
++    photoImg.classList.remove('hidden');
++    photoImg.onload = () => {};
++    photoImg.onerror = () => { showErrorAndReturn('Resim yüklenirken hata oluştu.'); };
++    photoImg.src = imgUrl;
++  }
++});
++
++backBtn.addEventListener('click', () => {
++  try { videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); } catch(e){}
++  photoImg.src = '';
++  mediaCard.classList.add('hidden');
++  messageCard.classList.remove('hidden');
++});
++
++// Enter-Taste akzeptiert
++document.addEventListener('keydown', (e) => {
++  if (e.key === 'Enter' && !messageCard.classList.contains('hidden')) {
++    acceptBtn.click();
++  }
++});
++
+*** End Patch
